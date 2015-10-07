@@ -1,0 +1,52 @@
+PercolatorSettings pipelineSettings = new PercolatorSettings
+{
+    Pipelines = new[]
+    { 
+        new PipelineSettings
+        {
+            Inputs = new []
+            { 
+                "https://script.google.com/macros/s/AKfycbz39VXj10RHcwvtfGAs0FntZgiYPFomJY8FDgxAhq4pjuye3gs/exec?506218231837630465",
+            },
+            Output = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "github_feed.xml"),
+            Title = "Github - Project releases",
+            Description = "Aggregated feed of multiple projects"
+        }
+    },
+    // Filters are always evaluated from top to bottom
+    Filters = new[]
+    {
+        // First, exclude all
+        new FilterSettings
+        {
+            Action = FilterAction.Exclude,
+            Field = FeedField.Any,
+            PatternType = PatternType.Glob,
+            Patterns = new [] { "*" }
+        },
+
+        // Include posts with "Release" or "Version" keywords
+        new FilterSettings
+        {
+            Action = FilterAction.Include,
+            Field = FeedField.Any,
+            PatternType = PatternType.String,
+            Patterns = new [] 
+            { 
+                "Release", "Version"
+            }
+        }
+    }
+};
+
+// Create filters
+IFilter[] filters = percolatorSettings.Filters.Select(filterSettings => Filter.Create(filterSettings)).ToArray();
+
+// Create pipeline evaluator
+IPipelineEvaluator pipeline = PipelineEvaluator.Create();
+
+// Execute each pipeline
+foreach (var pipelineSettings in percolatorSettings.Pipelines)
+{
+    pipeline.Execute(filters, pipelineSettings);
+}
